@@ -59,11 +59,15 @@
         .match-select { width: 100%; padding: 12px; font-size: 1rem; border: 2px solid #ddd; border-radius: 6px; background: white; margin-top: 10px; }
         .match-select:focus { border-color: var(--primary); outline: none; }
 
-        /* 按钮 */
+        /* 按钮样式 */
         .action-btn { padding: 12px 30px; font-size: 1rem; border-radius: 8px; cursor: pointer; border: none; font-weight: 600; width: 100%; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--secondary); }
-        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; opacity: 0.7; }
+        
+        /* 补回 Skip 按钮样式 */
+        .btn-outline { background: transparent; border: 2px solid #ccc; color: #666; }
+        .btn-outline:hover { border-color: #999; color: #333; background: #f0f0f0; }
 
         /* Loading & Results */
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
@@ -78,6 +82,47 @@
         @media (max-width: 600px) {
             .mode-selection { grid-template-columns: 1fr; }
             .container { padding: 20px; }
+        }
+        /* --- 复盘页面专用样式 --- */
+        .review-passage { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 6px; 
+            font-size: 0.95rem; 
+            color: #555; 
+            margin-bottom: 15px; 
+            font-style: italic; 
+            border-left: 4px solid #ddd; 
+            line-height: 1.6;
+        }
+
+        .review-opt { 
+            padding: 10px; 
+            border: 1px solid #eee; 
+            margin-bottom: 6px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: flex-start;
+        }
+
+        /* 绿色：正确答案（无论有没有选，都要标绿） */
+        .rev-correct { 
+            background: #d4edda; 
+            border-color: #c3e6cb; 
+            color: #155724; 
+            font-weight: 600;
+        }
+
+        /* 红色：你选错的答案 */
+        .rev-wrong { 
+            background: #f8d7da; 
+            border-color: #f5c6cb; 
+            color: #721c24; 
+        }
+
+        /* 灰色：没选的干扰项 */
+        .rev-neutral { 
+            color: #777; 
         }
     </style>
 </head>
@@ -123,7 +168,11 @@
         <div id="s1-passage" class="passage"></div>
         <h3 id="s1-question" style="display: none; color: var(--primary);">Loading Question...</h3>
         <div id="s1-options" style="display: none;"></div>
-        <button id="s1-next-btn" class="action-btn btn-primary" onclick="submitStage1Question()" style="display: none; margin-top: 20px;">Next Question</button>
+        
+        <div id="s1-controls" style="display: none; margin-top: 20px; justify-content: space-between; gap: 15px;">
+            <button class="action-btn btn-outline" onclick="skipStage1()" style="width: 40%;">Skip / Unlock</button>
+            <button id="s1-next-btn" class="action-btn btn-primary" onclick="submitStage1Question()" disabled style="width: 60%;">Next Question</button>
+        </div>
     </div>
 
     <div id="exam-stage2" class="container">
@@ -168,9 +217,15 @@
     </div>
 
     <script>
-        // --- 配置 ---
-        // ⚠️ 请务必确保这里的地址是你 Render 的真实地址，不要带多余空格
-        const API_URL = "http://127.0.0.1:5000/generate-exam"; 
+        // --- 核心配置 (自动识别环境) ---
+        const isLocal = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
+        
+        // 自动选择 API 地址：本地用 Localhost，上线用 Render
+        const API_URL = isLocal 
+            ? "http://127.0.0.1:5000/generate-exam" 
+            : "https://uq-reading-exam-page01.onrender.com/generate-exam";
+
+        console.log("Current Environment:", isLocal ? "Local Dev" : "Production");
         
         // --- 全局变量 ---
         let currentMode = null;
@@ -183,7 +238,7 @@
         let s1CurrentSelection = null;
 
         // Stage 2 变量
-        let s2UserAnswers = {}; // {A: "i", B: "iv"...}
+        let s2UserAnswers = {}; 
 
         // --- 1. 模式选择 ---
         function selectMode(mode) {
@@ -202,10 +257,8 @@
             if (!currentMode) return;
 
             // UI 切换
-            document.getElementById('setup').style.display = 'none'; // 暂时隐藏 setup，也可以保留
             document.getElementById('start-btn').style.display = 'none';
             document.getElementById('loading').style.display = 'block';
-            document.getElementById('setup').style.display = 'block'; // 保持 loading 在中间
 
             const token = document.getElementById('access-token').value.trim() || "guest";
 
@@ -215,7 +268,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         token: token,
-                        stage: currentMode // 关键：传给后端 stage 参数
+                        stage: currentMode 
                     })
                 });
 
@@ -260,13 +313,21 @@
             document.getElementById('s1-passage').innerText = q.passage;
             document.getElementById('s1-phase-badge').innerText = "PHASE 1: READING (60s)";
             document.getElementById('s1-phase-badge').style.background = "#e67e22";
+            
+            // 隐藏题目和选项（Phase 1 不看题）
             document.getElementById('s1-question').style.display = 'none';
             document.getElementById('s1-options').style.display = 'none';
-            document.getElementById('s1-next-btn').style.display = 'none';
+            
+            // ✅ 修改点 1：一开始就显示按钮栏，不再隐藏！
+            document.getElementById('s1-controls').style.display = 'flex'; 
+            
+            // ✅ 修改点 2：但Phase 1时，"Next" 必须禁用，防止乱点
+            document.getElementById('s1-next-btn').disabled = true;
 
             // Phase 1 倒计时
             startTimer(60, document.getElementById('timer-s1'), () => {
-                // 进入 Phase 2
+                // --- 倒计时结束，进入 Phase 2 ---
+                
                 document.getElementById('s1-phase-badge').innerText = "PHASE 2: ANSWERING (60s)";
                 document.getElementById('s1-phase-badge').style.background = "#27ae60";
                 
@@ -281,7 +342,8 @@
                     </div>
                 `).join('');
                 optContainer.style.display = 'block';
-                document.getElementById('s1-next-btn').style.display = 'block';
+                
+                // ✅ 修改点 3：Phase 2 只需要确保 Next 按钮依然禁用（直到选了选项）
                 document.getElementById('s1-next-btn').disabled = true;
 
                 // Phase 2 倒计时
@@ -298,9 +360,16 @@
             document.getElementById('s1-next-btn').disabled = false;
         }
 
+        function skipStage1() {
+            s1CurrentSelection = -1; // -1 代表 Skip
+            submitStage1Question();
+        }
+
         function submitStage1Question() {
             clearInterval(timerInterval);
-            s1UserAnswers.push(s1CurrentSelection === null ? -1 : s1CurrentSelection);
+            // 如果用户点了 Next 但没选，或者超时，存为 -1
+            const ans = s1CurrentSelection === null ? -1 : s1CurrentSelection;
+            s1UserAnswers.push(ans);
             
             if (s1Index < 7) {
                 s1Index++;
@@ -314,7 +383,7 @@
         function startStage2() {
             document.getElementById('exam-stage2').style.display = 'block';
             
-            // 渲染 Headings 列表 (i - ix)
+            // 渲染 Headings 列表
             const headingsHtml = Object.keys(examData.headings).map(key => 
                 `<li><span style="color:var(--primary); width:30px; display:inline-block;">${key}.</span> ${examData.headings[key]}</li>`
             ).join('');
@@ -358,6 +427,7 @@
             `).join('');
 
             // Phase 2: 8分钟做题
+            // 修复：使用 setTimeout 防止 Alert 阻塞页面渲染
             setTimeout(() => {
                 alert("Reading Phase Started! You have 8 minutes to match sections.");
                 startTimer(480, document.getElementById('timer-s2'), finishStage2);
@@ -404,56 +474,74 @@
             examData.forEach((q, i) => {
                 const correct = q.correct;
                 const user = s1UserAnswers[i];
-                if (user === correct) score++;
+                const isCorrect = (user === correct);
                 
-                const userText = user === -1 ? "Skipped" : String.fromCharCode(65+user);
-                const correctText = String.fromCharCode(65+correct);
-                const isCorrect = user === correct;
+                if (isCorrect) score++;
+                
+                // 1. 生成选项列表 HTML
+                let optionsHtml = '';
+                q.options.forEach((optText, optIdx) => {
+                    let className = 'review-opt';
+                    let icon = '';
+
+                    // 逻辑：
+                    // A. 如果是正确答案 -> 绿色 (rev-correct)
+                    // B. 如果是你选的且选错了 -> 红色 (rev-wrong)
+                    // C. 其他 -> 普通灰色 (rev-neutral)
+
+                    if (optIdx === correct) {
+                        className += ' rev-correct';
+                        icon = '✅ ';
+                    } else if (optIdx === user && !isCorrect) {
+                        className += ' rev-wrong';
+                        icon = '❌ ';
+                    } else {
+                        className += ' rev-neutral';
+                        icon = '<span style="display:inline-block; width:20px;"></span>'; // 占位符对齐
+                    }
+
+                    optionsHtml += `
+                        <div class="${className}">
+                            <strong style="margin-right:8px;">${String.fromCharCode(65+optIdx)}.</strong> 
+                            <span>${icon} ${optText}</span>
+                        </div>
+                    `;
+                });
+
+                // 2. 组装卡片
+                // 状态标签
+                let statusTag = isCorrect 
+                    ? `<span class="tag" style="background:var(--success); color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem;">Correct</span>`
+                    : `<span class="tag" style="background:var(--error); color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem;">Wrong</span>`;
+                
+                if (user === -1) statusTag = `<span class="tag" style="background:#999; color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem;">Skipped</span>`;
 
                 html += `
                     <div class="review-card" style="border-left: 5px solid ${isCorrect ? 'var(--success)' : 'var(--error)'}">
-                        <h4>Question ${i+1}</h4>
-                        <p style="font-size:0.9rem; color:#666;">${q.question}</p>
-                        <p>Your Answer: <span class="${isCorrect ? 'correct-tag' : 'wrong-tag'}">${userText}</span></p>
-                        ${!isCorrect ? `<p>Correct Answer: <span class="correct-tag">${correctText}</span></p>` : ''}
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <h3 style="margin:0; color:var(--primary);">Question ${i+1}</h3>
+                            ${statusTag}
+                        </div>
+                        
+                        <div class="review-passage">
+                            <strong>Text:</strong><br>
+                            ${q.passage}
+                        </div>
+
+                        <p style="font-weight:bold; font-size:1.1rem; margin-bottom:10px;">Q: ${q.question}</p>
+                        
+                        <div style="margin-top:10px;">
+                            ${optionsHtml}
+                        </div>
                     </div>
                 `;
             });
             
             document.getElementById('final-score').innerText = `${score} / 8`;
             document.getElementById('review-content').innerHTML = html;
+            // 自动滚回到顶部看成绩
+            window.scrollTo(0, 0);
         }
-
-        function showResultsStage2() {
-            document.getElementById('exam-stage2').style.display = 'none';
-            document.getElementById('scoreboard').style.display = 'block';
-
-            let score = 0;
-            let html = '';
-
-            examData.sections.forEach(sec => {
-                const correct = sec.correct_heading;
-                const user = s2UserAnswers[sec.id] || "No Answer";
-                const isCorrect = user === correct;
-                
-                if (isCorrect) score++;
-
-                html += `
-                    <div class="review-card" style="border-left: 5px solid ${isCorrect ? 'var(--success)' : 'var(--error)'}">
-                        <h4>Section ${sec.id}</h4>
-                        <p style="font-size:0.9rem;">${sec.text.substring(0, 80)}...</p>
-                        <p>Your Match: <span class="${isCorrect ? 'correct-tag' : 'wrong-tag'}">${user}</span> 
-                           ${!isCorrect ? `(Correct: <span class="correct-tag">${correct}</span>)` : ''}
-                        </p>
-                        <p style="font-size:0.8rem; color:#666;">Heading Text: ${examData.headings[correct]}</p>
-                    </div>
-                `;
-            });
-
-            document.getElementById('final-score').innerText = `${score} / 7`;
-            document.getElementById('review-content').innerHTML = html;
-        }
-
     </script>
 </body>
 </html>
