@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>UQ Reading Simulator - Stage 1</title>
+    <style>
+        :root { --primary: #51247a; --secondary: #962a8b; --bg: #f5f7fa; --text: #2c3e50; --success: #27ae60; --error: #c0392b; --selected-bg: #eaddff; --selected-border: #51247a; }
+        body { font-family: 'Segoe UI', Inter, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        
+        /* 通用容器 */
+        .container { max-width: 900px; width: 100%; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); display: none; margin-bottom: 40px;}
+        
+        /* 首页设置 */
+        #setup { display: block; text-align: center; margin-top: 80px; }
+        
+        /* 顶部状态栏 */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; }
+        .progress-indicator { font-size: 1.1rem; color: #666; font-weight: 600; }
+        .timer { font-size: 2.2rem; font-weight: 800; color: var(--error); font-variant-numeric: tabular-nums; }
+        
+        /* 题目内容 */
+        .stage-badge { display: inline-block; padding: 5px 12px; border-radius: 4px; font-weight: bold; color: white; margin-bottom: 10px; font-size: 0.9rem; }
+        /* 增加字体大小和行高，模仿学术阅读 */
+        .passage { 
+            font-size: 1.15rem; 
+            line-height: 1.8; 
+            color: #2c3e50; 
+            background: #fffbf2; /* 暖色背景 */
+            padding: 30px; 
+            border-radius: 8px; 
+            border: 1px solid #e0e0e0; 
+            margin-bottom: 25px; 
+            text-align: justify; 
+            font-family: 'Georgia', serif; 
+        }
+        
+        /* 选项区域 */
+        .options-grid { display: grid; gap: 15px; }
+        .option-card { padding: 20px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 1.1rem; text-align: left; background: white; display: flex; align-items: flex-start; }
+        .option-card:hover { border-color: #bbb; background: #fafafa; }
+        .option-card strong { margin-right: 12px; min-width: 25px; }
+
+        /* 选中状态样式 */
+        .option-card.selected {
+            background-color: var(--selected-bg);
+            border-color: var(--selected-border);
+            box-shadow: 0 0 0 1px var(--selected-border);
+        }
+
+        /* 底部控制栏 */
+        .control-bar { margin-top: 30px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 20px; }
+        
+        button.action-btn { padding: 12px 30px; font-size: 1rem; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-weight: 600; border: none;}
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--secondary); }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; opacity: 0.7; }
+        .btn-outline { background: transparent; border: 2px solid #ccc; color: #666; }
+        .btn-outline:hover { border-color: #999; color: #333; background: #f0f0f0; }
+
+        /* Loading */
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; display: inline-block; margin-bottom: 15px;}
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ---------------- 复盘/答案解析页面样式 ---------------- */
+        .review-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 25px; margin-bottom: 40px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f5f5f5; padding-bottom: 15px; }
+        .review-passage-box { background: #f8f9fa; padding: 20px; border-radius: 8px; font-size: 1rem; color: #555; margin-bottom: 20px; line-height: 1.6; font-style: italic; border-left: 4px solid #ddd; }
+        .review-q-text { font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; color: #333; }
+        
+        /* 复盘选项样式 */
+        .review-opt { padding: 12px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 8px; font-size: 1rem; display: flex; align-items: center;}
+        
+        /* 答案状态颜色 */
+        .ans-correct { background-color: #d4edda; border-color: #c3e6cb; color: #155724; font-weight: 600; } /* 绿色-正确 */
+        .ans-wrong { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; opacity: 0.9; } /* 红色-错误 */
+        .ans-neutral { color: #888; opacity: 0.7; } /* 未选的干扰项 */
+
+        .tag { padding: 4px 10px; border-radius: 20px; font-size: 0.85em; color: white; font-weight: bold;}
+        .tag-correct { background: var(--success); }
+        .tag-wrong { background: var(--error); }
+        .tag-skip { background: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+    <div id="setup" class="container">
+        <h1 style="color: var(--primary);">UQ Language Course Simulator</h1>
+        <h2 style="color: #666;">Stage 1 Reading Assessment</h2>
+        <div style="text-align: left; display: inline-block; margin: 20px 0; background: #f8f9fa; padding: 20px; border-radius: 8px;">
+            <p><strong>Rules:</strong></p>
+            <ul>
+                <li>Total Questions: <strong>8</strong></li>
+                <li><strong>Phase 1:</strong> Read Passage (60 seconds)</li>
+                <li><strong>Phase 2:</strong> Select Answer (60 seconds)</li>
+                <li><strong>Manual Navigation:</strong> You must click 'Next' to proceed.</li>
+                <li><strong>Unlock Mode:</strong> Use 'Skip' to give up on a question instantly.</li>
+            </ul>
+        </div>
+        <br>
+        <button class="action-btn btn-primary" onclick="initExam()" id="start-btn">Generate Exam & Start</button>
+        <div id="loading" style="display: none; margin-top: 30px;">
+            <div class="loader"></div> 
+            <p>Generating 8 unique questions...<br><small>(This may take approx. 20-30 seconds)</small></p>
+        </div>
+    </div>
+
+    <div id="exam" class="container">
+        <div class="header">
+            <div class="progress-indicator">
+                Question <span id="current-q-num">1</span> / 8
+            </div>
+            <div id="timer" class="timer">01:00</div>
+        </div>
+
+        <div>
+            <span id="phase-badge" class="stage-badge" style="background: #e67e22;">PHASE 1: READING</span>
+        </div>
+
+        <h3 id="question-text" style="margin-top: 0; display:none;">Loading...</h3>
+        
+        <div id="passage" class="passage"></div>
+
+        <div id="options-container" class="options-grid" style="display: none;"></div>
+
+        <div class="control-bar" id="exam-controls" style="visibility: hidden;">
+            <button class="action-btn btn-outline" onclick="skipQuestion()">Skip / Unlock</button>
+            <button class="action-btn btn-primary" id="next-btn" onclick="confirmNext()" disabled>Next Question &rarr;</button>
+        </div>
+    </div>
+
+    <div id="scoreboard" class="container">
+        <div style="text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid #eee;">
+            <h1 style="color: var(--primary); margin-bottom: 10px;">Exam Results</h1>
+            <div style="font-size: 3rem; font-weight: bold; color: var(--text);">
+                Score: <span id="final-score" style="color: var(--primary);">0</span> / 8
+            </div>
+            <button class="action-btn btn-primary" onclick="location.reload()" style="margin-top: 20px;">Start New Exam</button>
+        </div>
+        
+        <div id="review-list"></div>
+    </div>
+
+    <script>
+        // 全局状态
+        let examSet = [];
+        let currentIndex = 0;
+        let userAnswers = []; 
+        let currentSelection = null; 
+        let timerId = null;
+
+        async function initExam() {
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/generate-exam');
+                const data = await response.json();
+                
+                if(data.exam_set && data.exam_set.length > 0) {
+                    examSet = data.exam_set;
+                    startExamLoop();
+                } else {
+                    throw new Error("Invalid data format");
+                }
+            } catch (err) {
+                alert("Connection failed. Check Python backend.");
+                console.error(err);
+                document.getElementById('start-btn').style.display = 'inline-block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function startExamLoop() {
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('exam').style.display = 'block';
+            currentIndex = 0;
+            userAnswers = [];
+            loadQuestion(0);
+        }
+
+        function loadQuestion(index) {
+            const q = examSet[index];
+            currentSelection = null;
+            document.getElementById('next-btn').disabled = true;
+            document.getElementById('exam-controls').style.visibility = 'visible';
+
+            document.getElementById('current-q-num').innerText = index + 1;
+            document.getElementById('passage').innerText = q.passage;
+            document.getElementById('options-container').style.display = 'none';
+            document.getElementById('question-text').style.display = 'none';
+            
+            const badge = document.getElementById('phase-badge');
+            badge.innerText = "PHASE 1: READING ONLY";
+            badge.style.background = "#e67e22"; 
+
+            runTimer(60, () => { startPhase2(index); });
+        }
+
+        function startPhase2(index) {
+            const q = examSet[index];
+            const badge = document.getElementById('phase-badge');
+            badge.innerText = "PHASE 2: ANSWERING";
+            badge.style.background = "#27ae60"; 
+
+            document.getElementById('question-text').innerText = q.question;
+            document.getElementById('question-text').style.display = 'block';
+            
+            const optionsHtml = q.options.map((opt, i) => `
+                <div class="option-card" id="opt-${i}" onclick="selectOption(${i})">
+                    <strong>${String.fromCharCode(65+i)}</strong> 
+                    <span>${opt}</span>
+                </div>
+            `).join('');
+            
+            const optContainer = document.getElementById('options-container');
+            optContainer.innerHTML = optionsHtml;
+            optContainer.style.display = 'grid';
+
+            runTimer(60, () => { finishCurrentQuestion(-1); });
+        }
+
+        function selectOption(index) {
+            currentSelection = index;
+            document.querySelectorAll('.option-card').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`opt-${index}`).classList.add('selected');
+            document.getElementById('next-btn').disabled = false;
+        }
+
+        function confirmNext() {
+            if (currentSelection !== null) finishCurrentQuestion(currentSelection);
+        }
+
+        function skipQuestion() {
+            finishCurrentQuestion(-1);
+        }
+
+        function finishCurrentQuestion(answerIndex) {
+            clearInterval(timerId);
+            userAnswers.push(answerIndex);
+            if (currentIndex < 7) {
+                currentIndex++;
+                loadQuestion(currentIndex);
+            } else {
+                finishExam();
+            }
+        }
+
+        function runTimer(seconds, onComplete) {
+            let timeLeft = seconds;
+            clearInterval(timerId);
+            updateTimerUI(timeLeft);
+            timerId = setInterval(() => {
+                timeLeft--;
+                updateTimerUI(timeLeft);
+                if (timeLeft <= 0) {
+                    clearInterval(timerId);
+                    onComplete();
+                }
+            }, 1000);
+        }
+
+        function updateTimerUI(sec) {
+            const displaySec = sec < 10 ? '0'+sec : sec;
+            document.getElementById('timer').innerText = `00:${displaySec}`;
+            document.getElementById('timer').style.color = sec <= 10 ? '#c0392b' : '#2c3e50';
+        }
+
+        // --- 核心修改：详细的复盘逻辑 ---
+        function finishExam() {
+            document.getElementById('exam').style.display = 'none';
+            document.getElementById('scoreboard').style.display = 'block';
+
+            let score = 0;
+            let reviewHtml = '';
+
+            examSet.forEach((q, i) => {
+                const userAns = userAnswers[i];
+                const correctAns = q.correct;
+                const isCorrect = (userAns === correctAns);
+                
+                if (isCorrect) score++;
+
+                // 顶部状态标签
+                let statusBadge = '';
+                if (userAns === -1) {
+                    statusBadge = `<span class="tag tag-skip">Skipped / Timeout</span>`;
+                } else if (isCorrect) {
+                    statusBadge = `<span class="tag tag-correct">Correct</span>`;
+                } else {
+                    statusBadge = `<span class="tag tag-wrong">Wrong</span>`;
+                }
+
+                // 生成选项列表（带颜色标记）
+                let optionsListHtml = '';
+                q.options.forEach((optText, optIdx) => {
+                    let className = 'review-opt';
+                    let icon = '';
+
+                    // 逻辑：
+                    // 1. 如果这个选项是正确答案 -> 绿色 (无论你选没选)
+                    // 2. 如果这个选项是你选的，但选错了 -> 红色
+                    // 3. 其他 -> 灰色/普通
+
+                    if (optIdx === correctAns) {
+                        className += ' ans-correct';
+                        icon = '✅ '; // 标记正确答案
+                    } else if (optIdx === userAns) {
+                        className += ' ans-wrong';
+                        icon = '❌ '; // 标记你的错误选择
+                    } else {
+                        className += ' ans-neutral';
+                    }
+
+                    optionsListHtml += `
+                        <div class="${className}">
+                            <strong style="margin-right:10px;">${String.fromCharCode(65+optIdx)}.</strong> 
+                            ${icon}${optText}
+                        </div>
+                    `;
+                });
+
+                // 组装单个题目的复盘卡片
+                reviewHtml += `
+                    <div class="review-card">
+                        <div class="review-header">
+                            <h3 style="margin:0; color:#444;">Question ${i+1}</h3>
+                            ${statusBadge}
+                        </div>
+                        
+                        <div class="review-passage-box">
+                            ${q.passage}
+                        </div>
+                        
+                        <div class="review-q-text">Q: ${q.question}</div>
+                        
+                        <div class="review-options-list">
+                            ${optionsListHtml}
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('review-list').innerHTML = reviewHtml;
+            
+            // 滚动到顶部
+            window.scrollTo(0, 0);
+        }
+    </script>
+</body>
+</html>
