@@ -117,6 +117,80 @@ Generate a "Matching Headings" task based on a single cohesive academic article.
 }
 """
 
+STAGE3_PROMPT = """
+You are an exam writer for UQ BEP Stage 3 Reading. 
+Generate a "Locating Information" task based on a single cohesive academic article.
+
+### 1. ARTICLE STRUCTURE:
+- Topic: Academic (e.g., Psychology, Biology, Economics, History).
+- Length: Total 650-750 words.
+- Structure: Split the article into **7 Sections** (labeled A, B, C, D, E, F, G).
+
+### 2. QUESTIONS GENERATION (The Task):
+- Generate **7 Statements** describing specific information found in the text.
+- Format examples: "a reason why...", "a list of...", "a mention of...", "evidence that...".
+- **CRITICAL**: 
+    - Some sections might contain answers to multiple questions.
+    - Some sections might not be used at all.
+    - But ensure all 7 questions have a valid answer in the text.
+
+### 3. OUTPUT FORMAT (Strict JSON):
+{
+  "title": "Article Title",
+  "questions": [
+    {
+      "id": 1,
+      "text": "a mention of the initial failure...",
+      "correct_section": "B" 
+    },
+    ... (repeat for 7 questions)
+  ],
+  "sections": [
+    {
+      "id": "A",
+      "text": "Full text of section A..."
+    },
+    ... (Repeat for B, C, D, E, F, G)
+  ]
+}
+"""
+
+STAGE4_PROMPT = """
+You are an exam writer for UQ BEP Stage 4 Reading.
+Generate a "Gapped Text" task.
+
+### 1. ARTICLE STRUCTURE:
+- Topic: Academic/General Interest (e.g., Psychology, Sociology, Biology).
+- Length: Long (800-900 words).
+- The text must have logical flow.
+
+### 2. TASK GENERATION:
+- Remove **6 whole paragraphs** (or significant logical chunks) from the text.
+- Replace them in the text with markers: [[1]], [[2]], [[3]], [[4]], [[5]], [[6]].
+- Provide a list of **7 Paragraphs** (Options A-G).
+    - 6 are the correct removed paragraphs.
+    - 1 is a **Distractor** (does not fit anywhere).
+
+### 3. OUTPUT FORMAT (Strict JSON):
+{
+  "title": "Article Title",
+  "base_text": "Full text with markers [[1]], [[2]]... inside.",
+  "options": [
+    { "id": "A", "text": "Content of paragraph A..." },
+    { "id": "B", "text": "Content of paragraph B..." },
+    ... (Up to G)
+  ],
+  "answers": {
+    "1": "C",
+    "2": "A",
+    "3": "F",
+    "4": "B",
+    "5": "G",
+    "6": "D"
+  }
+}
+"""
+
 # --- 4. 路由定义 (修正部分) ---
 @app.route('/generate-exam', methods=['POST']) 
 @limiter.limit("2 per minute")  # 这里的限制规则可以根据需要调整
@@ -131,6 +205,10 @@ def generate_exam():
         current_prompt = STAGE1_PROMPT
         if stage_type == 'stage2':
             current_prompt = STAGE2_PROMPT
+        elif stage_type == 'stage3': 
+            current_prompt = STAGE3_PROMPT
+        elif stage_type == 'stage4': 
+                    current_prompt = STAGE4_PROMPT
 
         response = client.chat.completions.create(
             model="gpt-4o-mini", 
