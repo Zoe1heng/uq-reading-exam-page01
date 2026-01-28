@@ -79,7 +79,7 @@ client = OpenAI(api_key=api_key)
 
 # --- 5. 定义 Prompts (为了节省篇幅，这里折叠了，请确保你的代码里保留了完整的 Prompts) ---
 STAGE1_PROMPT = """
-You are a strict exam content creator for the University of Queensland (UQ) Bridging English Program.
+You are a strict exam content creator for Academic English Purposes (EAP).
 Generate a JSON object with **8 distinct reading items**.
 
 ### 1. SOURCE MATERIAL SIMULATION (Crucial):
@@ -88,7 +88,7 @@ Do NOT write like a generic AI assistant. Write like a journalist for **"The Con
 - **Vocabulary**: Use precise, less common academic collocations (e.g., "precipitate a crisis", "inherent contradiction", "empirical evidence suggests").
 - **Avoid AI Clichés**: Do NOT use phrases like "In conclusion", "It is important to note", "In recent years", "delve into".
 
-### 2. STRUCTURAL REQUIREMENTS (The UQ Pattern):
+### 2. STRUCTURAL REQUIREMENTS:
 Each paragraph (120-140 words) MUST follow one of these logical flows strictly:
 - **Pattern A (The Twist)**: Start with a commonly held belief or a traditional method -> Introduce a "But" or "However" -> Present new evidence that contradicts the start.
 - **Pattern B (The Problem-Solution)**: Describe a complex problem -> Dismiss a simple solution -> Propose a nuanced/scientific solution.
@@ -119,7 +119,7 @@ Return ONLY valid JSON.
 """
 
 STAGE2_PROMPT = """
-You are an exam writer for UQ BEP Stage 2 Reading. 
+You are a strict exam content creator for Academic English Purposes (EAP) 
 Generate a "Matching Headings" task based on a single cohesive academic article.
 
 ### 1. ARTICLE STRUCTURE:
@@ -154,7 +154,7 @@ Generate a "Matching Headings" task based on a single cohesive academic article.
 """
 
 STAGE3_PROMPT = """
-You are an exam writer for UQ BEP Stage 3 Reading. 
+You are a strict exam content creator for Academic English Purposes (EAP)
 Generate a "Locating Information" task based on a single cohesive academic article.
 
 ### 1. ARTICLE STRUCTURE:
@@ -192,7 +192,7 @@ Generate a "Locating Information" task based on a single cohesive academic artic
 """
 
 STAGE4_PROMPT = """
-You are an exam writer for UQ BEP Stage 4 Reading.
+You are a strict exam content creator for Academic English Purposes (EAP)
 Generate a "Gapped Text" task.
 
 ### 1. ARTICLE STRUCTURE:
