@@ -3,3 +3,4 @@ venv/
 .env
 .DS_Store
 manager.py
+app_me.py

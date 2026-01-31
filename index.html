@@ -15,11 +15,11 @@
             --warning: #f39c12;
             --selected-bg: #eaddff; 
             --selected-border: #51247a; 
+            --highlight-color: #fff200; /* 雅思标准荧光黄 */
         }
         
         body { font-family: 'Segoe UI', Inter, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; color: var(--text); }
         
-        /* 通用容器 */
         .container { max-width: 1000px; width: 100%; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); display: none; margin-bottom: 40px;}
         
         /* 模式选择卡片 */
@@ -30,10 +30,27 @@
         .mode-card h3 { margin-top: 0; color: var(--primary); font-size: 1.1rem; }
         .mode-card p { font-size: 0.9rem; color: #666; margin: 5px 0; }
         
-        /* 顶部状态栏 */
+        /* --- [NEW] 顶部状态栏 & 高亮开关 --- */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; position: sticky; top: 0; background: white; z-index: 100; padding-top: 10px;}
         .timer { font-size: 1.8rem; font-weight: 800; color: var(--error); font-variant-numeric: tabular-nums; }
         
+        /* 高亮开关样式 */
+        .tool-control { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600; color: #555; background: #f8f9fa; padding: 5px 15px; border-radius: 20px; border: 1px solid #ddd; }
+        .toggle-switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--secondary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* --- [NEW] 高亮文本样式 --- */
+        .highlight-text { background-color: var(--highlight-color); cursor: pointer; border-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .highlight-text:hover { background-color: #ffdb4d; /* Hover时变深一点提示可点击 */ }
+        /* 开启高亮模式时的鼠标样式 */
+        body.pen-active .passage, 
+        body.pen-active .option-card,
+        body.pen-active .s4-text-area { cursor: text; } 
+
         /* Stage 1-3 通用样式 */
         .passage { font-size: 1.1rem; line-height: 1.7; color: #2c3e50; background: #fffbf2; padding: 25px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 25px; text-align: justify; }
         .stage-badge { display: inline-block; padding: 5px 12px; border-radius: 4px; font-weight: bold; color: white; margin-bottom: 10px; font-size: 0.9rem; background: var(--secondary); }
@@ -42,43 +59,22 @@
         .option-card.selected { background-color: var(--selected-bg); border-color: var(--selected-border); }
         .headings-box { background: #e8f4f8; padding: 20px; border-radius: 8px; border-left: 5px solid #2980b9; margin-bottom: 30px; }
         .headings-list li { margin-bottom: 8px; font-weight: 500; }
-        .match-select { padding: 10px; font-size: 1rem; border: 2px solid #ddd; border-radius: 6px; background: white; cursor: pointer; min-width: 120px;}
+        .match-select { padding: 10px; font-size: 1rem; border: 2px solid #ddd; border-radius: 6px; background: white; cursor: pointer; min-width: 120px; max-width: 100%;}
         .question-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-radius: 8px; margin-bottom: 10px; }
         .question-text { flex: 1; margin-right: 20px; font-weight: 500; color: #34495e; }
 
-        /* === Stage 4 (Gapped Text) 专用样式 === */
+        /* Stage 4 */
         .s4-layout { display: flex; gap: 30px; align-items: flex-start; }
         .s4-text-area { flex: 2; font-size: 1.1rem; line-height: 1.8; text-align: justify; }
-        
-        /* 关键：让右侧选项区域内部滚动，不影响整体 */
-        .s4-options-area { 
-            flex: 1; 
-            position: sticky; 
-            top: 80px; 
-            background: #f8f9fa; 
-            padding: 15px; 
-            border-radius: 8px; 
-            border: 1px solid #ddd; 
-            max-height: 80vh; /* 限制高度 */
-            overflow-y: auto; /* 超出滚动 */
-        }
-        
-        .gap-zone { 
-            display: block; margin: 20px 0; padding: 15px; 
-            background: #fff3e0; border: 2px dashed #f57c00; border-radius: 8px; 
-            text-align: center; color: #e65100; font-weight: bold; cursor: pointer; transition: all 0.2s;
-        }
+        .s4-options-area { flex: 1; position: sticky; top: 80px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; max-height: 80vh; overflow-y: auto; }
+        .gap-zone { display: block; margin: 20px 0; padding: 15px; background: #fff3e0; border: 2px dashed #f57c00; border-radius: 8px; text-align: center; color: #e65100; font-weight: bold; cursor: pointer; transition: all 0.2s; }
         .gap-zone.drag-over { background: #ffe0b2; transform: scale(1.02); }
         .gap-zone.filled { background: #e8f5e9; border: 2px solid #2e7d32; border-style: solid; color: #2e7d32; text-align: left; font-weight: normal; }
-
-        .draggable-item { 
-            background: white; border: 1px solid #ccc; padding: 12px; margin-bottom: 10px; 
-            border-radius: 6px; cursor: grab; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.2s;
-        }
+        .draggable-item { background: white; border: 1px solid #ccc; padding: 12px; margin-bottom: 10px; border-radius: 6px; cursor: grab; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.2s; }
         .draggable-item:hover { border-color: var(--primary); }
         .draggable-item.active-select { background: var(--selected-bg); border: 2px solid var(--primary); }
 
-        /* 按钮与通用UI */
+        /* UI Elements */
         .action-btn { padding: 12px 30px; font-size: 1rem; border-radius: 8px; cursor: pointer; border: none; font-weight: 600; width: 100%; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--secondary); }
@@ -88,7 +84,7 @@
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 复盘结果 */
+        /* Review */
         .review-card { border: 1px solid #eee; padding: 20px; margin-bottom: 20px; border-radius: 8px; background: white; }
         .review-passage { background: #f8f9fa; padding: 15px; border-radius: 6px; font-size: 0.95rem; color: #555; margin-bottom: 15px; font-style: italic; border-left: 4px solid #ddd; line-height: 1.6; }
         .review-opt { padding: 10px; border: 1px solid #eee; margin-bottom: 6px; border-radius: 6px; display: flex; align-items: flex-start; }
@@ -110,47 +106,35 @@
     <div id="setup" class="container" style="display: block; text-align: center; margin-top: 50px;">
         <h1 style="color: var(--primary); margin-bottom: 10px;">Reading Simulator</h1>
         <p style="color: #666;">Select your exam stage to begin</p>
-        
         <div class="mode-selection">
-            <div class="mode-card" id="card-stage1" onclick="selectMode('stage1')">
-                <h3>Stage 1: MCQs</h3>
-                <p>8 Paragraphs • 4 Options</p>
-                <p><strong>Time:</strong> ~16 mins</p>
-            </div>
-            <div class="mode-card" id="card-stage2" onclick="selectMode('stage2')">
-                <h3>Stage 2: Matching</h3>
-                <p>7 Sections • 9 Headings</p>
-                <p><strong>Time:</strong> 1 + 7 mins</p>
-            </div>
-            <div class="mode-card" id="card-stage3" onclick="selectMode('stage3')">
-                <h3>Stage 3: Locating</h3>
-                <p>7 Sections • 7 Statements</p>
-                <p><strong>Time:</strong> 1 + 10 mins</p>
-            </div>
-            <div class="mode-card" id="card-stage4" onclick="selectMode('stage4')">
-                <h3>Stage 4: Gapped Text</h3>
-                <p>6 Gaps • 7 Paragraphs</p>
-                <p><strong>Time:</strong> 14 mins</p>
-            </div>
+            <div class="mode-card" id="card-stage1" onclick="selectMode('stage1')"><h3>Stage 1: MCQs</h3><p>8 Paragraphs • 4 Options</p><p><strong>Time:</strong> ~16 mins</p></div>
+            <div class="mode-card" id="card-stage2" onclick="selectMode('stage2')"><h3>Stage 2: Matching</h3><p>7 Sections • 9 Headings</p><p><strong>Time:</strong> 8 mins</p></div>
+            <div class="mode-card" id="card-stage3" onclick="selectMode('stage3')"><h3>Stage 3: Locating</h3><p>7 Sections • 7 Statements</p><p><strong>Time:</strong> 11 mins</p></div>
+            <div class="mode-card" id="card-stage4" onclick="selectMode('stage4')"><h3>Stage 4: Gapped Text</h3><p>6 Gaps • 7 Paragraphs</p><p><strong>Time:</strong> 14 mins</p></div>
         </div>
-
         <div style="margin-top: 30px;">
             <input type="text" id="access-token" placeholder="Enter Access Code (Optional)" style="padding: 10px; width: 60%; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
             <br><br>
             <button class="action-btn btn-primary" onclick="initExam()" id="start-btn" disabled style="max-width: 300px;">Select a Mode First</button>
         </div>
-
-        <div id="loading" style="display: none;">
-            <div class="loader"></div> 
-            <p>Connecting to Examiner ...<br><small>(Wait time: ~40-60s)</small></p>
-        </div>
+        <div id="loading" style="display: none;"><div class="loader"></div><p>Connecting to Examiner ...<br><small>(Wait time: ~40-60s)</small></p></div>
     </div>
 
     <div id="exam-stage1" class="container">
-        <div class="header"><div><strong>Stage 1</strong>: Q <span id="s1-q-num">1</span> / 8</div><div id="timer-s1" class="timer">01:00</div></div>
+        <div class="header">
+            <div><strong>Stage 1</strong>: Q <span id="s1-q-num">1</span> / 8</div>
+            <div class="tool-control">
+                <span>🖊️ Highlight Mode</span>
+                <label class="toggle-switch" style="margin-left: 8px;">
+                    <input type="checkbox" id="hl-toggle-1" onchange="toggleHighlighter(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div id="timer-s1" class="timer">01:00</div>
+        </div>
         <span id="s1-phase-badge" class="stage-badge">PHASE 1: READING</span>
         <div id="s1-passage" class="passage"></div>
-        <h3 id="s1-question" style="display: none; color: var(--primary);">Loading Question...</h3>
+        <h3 id="s1-question" style="color: var(--primary); border-left: 5px solid var(--secondary); padding-left: 15px;">Loading...</h3>
         <div id="s1-options" style="display: none;"></div>
         <div id="s1-controls" style="display: none; margin-top: 20px; justify-content: space-between; gap: 15px;">
             <button class="action-btn btn-outline" onclick="skipStage1()" style="width: 40%;">Skip / Unlock</button>
@@ -159,9 +143,19 @@
     </div>
 
     <div id="exam-stage2" class="container">
-        <div class="header"><div><strong>Stage 2</strong>: Matching Headings</div><div id="timer-s2" class="timer">01:00</div></div>
+        <div class="header">
+            <div><strong>Stage 2</strong>: Matching Headings</div>
+            <div class="tool-control">
+                <span>🖊️ Highlight</span>
+                <label class="toggle-switch" style="margin-left: 8px;">
+                    <input type="checkbox" id="hl-toggle-2" onchange="toggleHighlighter(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div id="timer-s2" class="timer">01:00</div>
+        </div>
         <div id="s2-phase1" style="display: block;">
-            <div class="headings-box"><h3 style="margin-top:0;">List of Headings (Preview)</h3><ul id="s2-headings-preview" class="headings-list"></ul></div>
+            <div class="headings-box"><h3 style="margin-top:0;">List of Headings</h3><ul id="s2-headings-preview" class="headings-list"></ul></div>
             <p style="text-align: center; color: #666;">Memorize these headings. 1 Minute.</p>
         </div>
         <div id="s2-phase2" style="display: none;">
@@ -176,7 +170,17 @@
     </div>
 
     <div id="exam-stage3" class="container">
-        <div class="header"><div><strong>Stage 3</strong>: Locating Info</div><div id="timer-s3" class="timer">01:00</div></div>
+        <div class="header">
+            <div><strong>Stage 3</strong>: Locating Info</div>
+            <div class="tool-control">
+                <span>🖊️ Highlight</span>
+                <label class="toggle-switch" style="margin-left: 8px;">
+                    <input type="checkbox" id="hl-toggle-3" onchange="toggleHighlighter(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div id="timer-s3" class="timer">01:00</div>
+        </div>
         <div id="s3-phase1">
             <div class="headings-box" style="border-left-color: #e67e22; background: #fff5e6;">
                 <h3 style="margin-top:0; color: #d35400;">Information to Locate:</h3>
@@ -198,17 +202,21 @@
     <div id="exam-stage4" class="container" style="max-width: 1100px;">
         <div class="header">
             <div><strong>Stage 4</strong>: Gapped Text</div>
+            <div class="tool-control">
+                <span>🖊️ Highlight</span>
+                <label class="toggle-switch" style="margin-left: 8px;">
+                    <input type="checkbox" id="hl-toggle-4" onchange="toggleHighlighter(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
             <div id="timer-s4" class="timer">14:00</div>
         </div>
         <p style="background: #e8f4f8; padding: 10px; border-radius:6px; color:#555; text-align:center;">
             <strong>Task:</strong> Drag paragraphs from the right (or Click to Select) and fill the gaps.
         </p>
-
         <h2 id="s4-title" style="text-align: center; color: var(--primary);"></h2>
-
         <div class="s4-layout">
             <div class="s4-text-area" id="s4-text-container"></div>
-
             <div class="s4-options-area">
                 <h4 style="margin-top:0;">Paragraph Options (A-G)</h4>
                 <div id="s4-pool-container"></div>
@@ -233,19 +241,14 @@
     </div>
 
     <script>
-        // --- 核心配置 ---
         const isLocal = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
-        const API_URL = isLocal 
-            ? "http://127.0.0.1:5000/generate-exam" 
-            : "https://uq-reading-exam-page01.onrender.com";
-        console.log("Environment:", isLocal ? "Local" : "Production");
+        const API_URL = isLocal ? "http://127.0.0.1:5000/generate-exam" : "https://uq-reading-exam-page01.onrender.com";
         
-        // --- 全局变量 ---
         let currentMode = null;
         let examData = null;
         let timerInterval = null;
         
-        // 数据存储
+        // Data Stores
         let s1Index = 0;
         let s1UserAnswers = [];
         let s1CurrentSelection = null;
@@ -253,6 +256,59 @@
         let s3UserAnswers = {}; 
         let s4UserAnswers = {}; 
         let s4SelectedId = null;
+
+        // --- [NEW] Highlighter Logic ---
+        let isHighlighterActive = false;
+
+        function toggleHighlighter(active) {
+            isHighlighterActive = active;
+            // 同步所有 Toggle 按钮的状态
+            ['hl-toggle-1', 'hl-toggle-2', 'hl-toggle-3', 'hl-toggle-4'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.checked = active;
+            });
+            if(active) document.body.classList.add('pen-active');
+            else document.body.classList.remove('pen-active');
+        }
+
+        // 监听鼠标抬起事件来触发高亮
+        document.addEventListener('mouseup', function() {
+            if (!isHighlighterActive) return;
+
+            const selection = window.getSelection();
+            if (selection.toString().length === 0) return;
+
+            // 获取选区并高亮
+            // 注意：跨越多个复杂的HTML标签(如跨段落)可能会导致 surroundContents 报错
+            // 这里我们做一个简单的错误捕捉
+            try {
+                const range = selection.getRangeAt(0);
+                
+                // 限制：只能在高亮 文章(passage) 或 选项(options) 区域
+                const commonAncestor = range.commonAncestorContainer;
+                const parent = commonAncestor.nodeType === 1 ? commonAncestor : commonAncestor.parentNode;
+                
+                // 检查是否在允许的容器内
+                if (parent.closest('.passage') || parent.closest('.option-card') || parent.closest('.s4-text-area') || parent.closest('.question-text') || parent.closest('.draggable-item')) {
+                    const span = document.createElement('span');
+                    span.className = 'highlight-text';
+                    span.title = 'Click to remove highlight';
+                    // 点击高亮区域取消高亮
+                    span.onclick = function(e) {
+                        e.stopPropagation(); // 防止触发选项点击
+                        if(isHighlighterActive) {
+                            const text = document.createTextNode(this.innerText);
+                            this.parentNode.replaceChild(text, this);
+                        }
+                    };
+                    
+                    range.surroundContents(span);
+                    selection.removeAllRanges(); // 高亮后取消选区视觉状态
+                }
+            } catch (e) {
+                console.log("Unable to highlight simple range (likely crosses block elements)", e);
+            }
+        });
 
         // --- 辅助函数 ---
         function toggleId(id) {
@@ -289,6 +345,9 @@
                 
                 document.getElementById('setup').style.display = 'none';
                 
+                // 重置高亮开关
+                toggleHighlighter(false);
+
                 if (currentMode === 'stage1') { examData = data.exam_set; startStage1(); }
                 else if (currentMode === 'stage2') { examData = data; startStage2(); }
                 else if (currentMode === 'stage3') { examData = data; startStage3(); }
@@ -331,27 +390,29 @@
             s1CurrentSelection = null;
             document.getElementById('s1-q-num').innerText = s1Index + 1;
             document.getElementById('s1-passage').innerText = q.passage;
-            document.getElementById('s1-question').style.display = 'none';
+            document.getElementById('s1-question').innerText = q.question;
+            document.getElementById('s1-question').style.display = 'block'; 
             document.getElementById('s1-options').style.display = 'none';
             document.getElementById('s1-controls').style.display = 'flex';
             document.getElementById('s1-next-btn').disabled = true;
-            document.getElementById('s1-phase-badge').innerText = "PHASE 1 (60s)";
+            document.getElementById('s1-phase-badge').innerText = "PHASE 1: READ (60s)";
             document.getElementById('s1-phase-badge').style.background = "#e67e22";
 
             startTimer(60, document.getElementById('timer-s1'), () => {
-                document.getElementById('s1-phase-badge').innerText = "PHASE 2 (60s)";
+                document.getElementById('s1-phase-badge').innerText = "PHASE 2: ANSWER (60s)";
                 document.getElementById('s1-phase-badge').style.background = "#27ae60";
-                document.getElementById('s1-question').innerText = q.question;
-                document.getElementById('s1-question').style.display = 'block';
                 document.getElementById('s1-options').innerHTML = q.options.map((o,i)=>
                     `<div class="option-card" id="opt-${i}" onclick="selectS1Option(${i})"><strong style="margin-right:10px;">${String.fromCharCode(65+i)}.</strong> ${o}</div>`
                 ).join('');
                 document.getElementById('s1-options').style.display = 'block';
-                document.getElementById('s1-next-btn').disabled = true;
                 startTimer(60, document.getElementById('timer-s1'), submitStage1Question);
             });
         }
         function selectS1Option(i) {
+            // 如果高亮模式开启，点击选项可能是为了取消高亮，不要触发选择
+            // 但因为高亮点击在 capture 阶段处理了，这里主要处理卡片点击
+            if(window.getSelection().toString().length > 0) return; // 正在选文字
+
             s1CurrentSelection = i;
             document.querySelectorAll('.option-card').forEach(e=>e.classList.remove('selected'));
             document.getElementById('opt-'+i).classList.add('selected');
@@ -375,7 +436,12 @@
             document.getElementById('s2-phase1').style.display = 'none';
             document.getElementById('s2-phase2').style.display = 'block';
             document.getElementById('s2-title').innerText = examData.title;
-            let opts = '<option value="" disabled selected>Select...</option>' + Object.keys(examData.headings).map(k=>`<option value="${k}">${k}</option>`).join('');
+            let opts = '<option value="" disabled selected>Select Heading...</option>' + 
+                Object.keys(examData.headings).map(k => {
+                    const fullText = examData.headings[k];
+                    const shortText = fullText.length > 40 ? fullText.substring(0, 40) + "..." : fullText;
+                    return `<option value="${k}">${k} - ${shortText}</option>`;
+                }).join('');
             document.getElementById('s2-passages-container').innerHTML = examData.sections.map(s=>`
                 <div class="passage" style="position:relative;">
                     <div style="position:absolute; top:-10px; left:-10px; background:var(--primary); color:white; padding:5px 10px; font-weight:bold; border-radius:4px;">Section ${s.id}</div>
@@ -407,42 +473,32 @@
         }
         function finishStage3() { clearInterval(timerInterval); showResultsStage3(); }
 
-        // ================= STAGE 4 (Gapped Text) =================
+        // ================= STAGE 4 =================
         function startStage4() {
             document.getElementById('exam-stage4').style.display = 'block';
             document.getElementById('s4-title').innerText = examData.title;
-
-            // 1. 处理文章文本：替换 [[1]] 为交互式空洞 (使用单行替换防止HTML格式错误)
             let processedText = examData.base_text.replace(/\[\[(\d+)\]\]/g, (match, num) => {
                 return `<div class="gap-zone" id="gap-${num}" data-num="${num}" ondrop="dropS4(event)" ondragover="allowDropS4(event)" onclick="handleClickGapS4('${num}')">[ GAP ${num} ] <br><small style="font-weight:normal">(Drop Here or Click)</small></div>`;
             });
             processedText = processedText.replace(/\n/g, '<br>'); 
             document.getElementById('s4-text-container').innerHTML = processedText;
-
-            // 2. 渲染选项池
             renderStage4Pool();
-
-            // 3. 启动计时 (14分钟 = 840秒)
             startTimer(840, document.getElementById('timer-s4'), finishStage4);
         }
-
         function renderStage4Pool() {
             const container = document.getElementById('s4-pool-container');
             container.innerHTML = '';
-            
             examData.options.forEach(opt => {
-                // 如果选项已被使用，不显示在池中
                 const isUsed = Object.values(s4UserAnswers).includes(opt.id);
                 if (!isUsed) {
                     const div = document.createElement('div');
                     div.className = 'draggable-item';
                     div.id = `opt-${opt.id}`;
                     div.draggable = true;
-                    // 修复：取消 substring 截断，显示完整段落
                     div.innerHTML = `<strong>Paragraph ${opt.id}</strong><p style="margin:5px 0 0; font-size:0.9rem; color:#444;">${opt.text}</p>`;
-                    
                     div.ondragstart = (e) => { e.dataTransfer.setData("text", opt.id); };
                     div.onclick = () => {
+                        if(window.getSelection().toString().length > 0) return; // 正在高亮则不选
                         document.querySelectorAll('.draggable-item').forEach(el=>el.classList.remove('active-select'));
                         s4SelectedId = opt.id;
                         div.classList.add('active-select');
@@ -451,8 +507,6 @@
                 }
             });
         }
-
-        // Stage 4 交互逻辑
         function allowDropS4(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
         function dropS4(ev) {
             ev.preventDefault(); ev.currentTarget.classList.remove('drag-over');
@@ -460,13 +514,8 @@
             fillGapS4(ev.currentTarget.dataset.num, optId);
         }
         function handleClickGapS4(gapNum) {
-            if (s4SelectedId) {
-                fillGapS4(gapNum, s4SelectedId);
-                s4SelectedId = null; // 消耗选中
-            } else if (s4UserAnswers[gapNum]) {
-                delete s4UserAnswers[gapNum];
-                updateStage4UI();
-            }
+            if (s4SelectedId) { fillGapS4(gapNum, s4SelectedId); s4SelectedId = null; } 
+            else if (s4UserAnswers[gapNum]) { delete s4UserAnswers[gapNum]; updateStage4UI(); }
         }
         function fillGapS4(gapNum, optId) {
             for (let g in s4UserAnswers) { if (s4UserAnswers[g] === optId) delete s4UserAnswers[g]; }
@@ -491,7 +540,6 @@
         function resetStage4() { s4UserAnswers = {}; updateStage4UI(); }
         function finishStage4() { clearInterval(timerInterval); showResultsStage4(); }
 
-
         // ================= 结果结算系统 =================
         function showResultsStage1() {
             let score = 0; let html = '';
@@ -510,7 +558,6 @@
             });
             displayScoreboard(score, 8, html);
         }
-
         function showResultsStage2() {
             let score = 0; let html = '';
             examData.sections.forEach(sec => {
@@ -521,7 +568,6 @@
             });
             displayScoreboard(score, 7, html);
         }
-
         function showResultsStage3() {
             let score = 0; let html = '';
             examData.questions.forEach(q => {
@@ -532,7 +578,6 @@
             });
             displayScoreboard(score, 7, html);
         }
-
         function showResultsStage4() {
             let score = 0; let html = '';
             for(let i=1; i<=6; i++) {
@@ -547,14 +592,12 @@
             }
             displayScoreboard(score, 6, html);
         }
-
         function renderReviewCard(title, qText, passage, contentHtml, isCorrect) {
             return `<div class="review-card" style="border-left: 5px solid ${isCorrect ? 'var(--success)' : 'var(--error)'}">
                     <h3 style="margin-top:0; color:var(--primary);">${title}</h3>
                     ${passage ? `<div class="review-passage">${passage}</div>` : ''}
                     <p><strong>${qText}</strong></p>${contentHtml}</div>`;
         }
-
         function displayScoreboard(score, total, html) {
             document.querySelectorAll('.container').forEach(e => e.style.display = 'none');
             document.getElementById('scoreboard').style.display = 'block';

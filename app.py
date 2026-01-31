@@ -31,10 +31,9 @@ else:
     print("⚠️ 警告: 未设置 MONGO_URI，运行在无数据库模式（卡密功能将不可用）")
     tokens_collection = None
 
-# --- 2. 辅助函数：卡密管理 (已修复判断逻辑) ---
+# --- 2. 辅助函数：卡密管理 ---
 def get_token_quota(token):
     """查询卡密剩余次数，如果是新卡密(特定前缀)则自动创建"""
-    # 修复点 1: 必须显式判断 is None
     if tokens_collection is None:
         return 0
     
@@ -47,7 +46,6 @@ def get_token_quota(token):
 
 def decrement_token_quota(token):
     """扣除一次机会"""
-    # 修复点 2: 必须显式判断 is not None
     if tokens_collection is not None:
         tokens_collection.update_one(
             {"token": token},
@@ -77,41 +75,65 @@ limiter = Limiter(
 api_key = os.environ.get("OPENAI_API_KEY") 
 client = OpenAI(api_key=api_key)
 
-# --- 5. 定义 Prompts (为了节省篇幅，这里折叠了，请确保你的代码里保留了完整的 Prompts) ---
+# --- 5. 定义 Prompts  ---
 STAGE1_PROMPT = """
-You are a strict exam content creator for Academic English Purposes (EAP).
+You are a senior content developer for high-stakes English exams (IELTS/PTE).
 Generate a JSON object with **8 distinct reading items**.
 
-### 1. SOURCE MATERIAL SIMULATION (Crucial):
-Do NOT write like a generic AI assistant. Write like a journalist for **"The Conversation"** or **"New Scientist"**.
-- **Tone**: Academic but engaging, objective, analytical.
-- **Vocabulary**: Use precise, less common academic collocations (e.g., "precipitate a crisis", "inherent contradiction", "empirical evidence suggests").
-- **Avoid AI Clichés**: Do NOT use phrases like "In conclusion", "It is important to note", "In recent years", "delve into".
+### 1. CRITICAL LENGTH & CONTENT CONSTRAINT:
+- **Length**: Each passage MUST be **200-250 words**.
+- **Sentence Count**: **12-15 sentences** per passage.
+- **Detail**: Do NOT just summarize abstract concepts. Describe specific scenarios, sensory details, or historical context.
 
-### 2. STRUCTURAL REQUIREMENTS:
-Each paragraph (120-140 words) MUST follow one of these logical flows strictly:
-- **Pattern A (The Twist)**: Start with a commonly held belief or a traditional method -> Introduce a "But" or "However" -> Present new evidence that contradicts the start.
-- **Pattern B (The Problem-Solution)**: Describe a complex problem -> Dismiss a simple solution -> Propose a nuanced/scientific solution.
-- **Pattern C (The Definition)**: Define a concept broadly -> Narrow it down -> Argue why this specific definition matters.
+### 2. CITATION STYLE:
+- **Rule**: Use specific names (Dr. X) in **MAXIMUM 2** passages.
+- **For the other 6**: Use generalized attribution ("Many biologists...", "Recent evidence...", "Urban planners...").
 
-### 3. QUESTION TYPES (Randomized):
-- "What point is the writer making?" (Focus on the argument AFTER the 'However').
-- "What is the writer doing in this passage?" (e.g., "Challenging a widespread assumption", "Outlining a causal relationship").
-- "Which heading best suits this paragraph?"
+### 3. STRUCTURAL VARIETY (Mix these 4 Styles):
+- **Style A (Sensory)**: Start with a sound/sight description.
+- **Style B (Historical)**: Start with "In the late 19th century..." or similar.
+- **Style C (Rhetorical)**: Start with a question to the reader.
+- **Style D (Phenomenon)**: Direct definition of a complex event.
 
-### 4. RANDOMIZATION:
-- **SHUFFLE ANSWERS**: The correct answer index (0-3) MUST be random.
-- **TOPICS**: Mix Biology, Linguistics, Urban Design, Cognitive Science, History.
+### 4. TOPICS (Mix these):
+- Animal Behavior, Urban Planning, Cognitive Psychology, Environmental Science, History of Tech.
 
-### 5. OUTPUT:
+### 5. QUESTION TYPES (Standardized):
+Randomly assign ONE question type per passage:
+- "What is the main point that the writer is making in this passage?"
+- "What would make the best heading for this paragraph?"
+- "What is the writer doing in this passage?"
+- "What conclusion can the reader make from this passage?"
+
+### 6. OPTION GENERATION (CRITICAL UPGRADE - HARD MODE):
+You must create **DIFFICULT** options. Do not create easy "giveaway" questions.
+
+- **The Correct Answer (The Paraphrase)**:
+    - MUST express the core idea using **SYNONYMS**.
+    - **Forbidden**: Do NOT simply repeat distinct keywords from the text.
+    - Example: If text says "The noise caused severe distress," the option should say "The sounds resulted in significant anxiety."
+
+- **Distractor 1 (The "Too Narrow" Trap)**:
+    - A statement that is **TRUE** according to the text, but is only a **minor detail**, not the main point/heading.
+    - *Goal*: Trap students who spot a keyword but don't understand the whole text.
+
+- **Distractor 2 (The "Too Strong" Trap)**:
+    - A statement that closely resembles the text but uses **absolute language** (e.g., "always", "only", "solely", "never") to make it strictly incorrect.
+    - Example: Text says "Listening to music *can* help concentration," Option says "Listening to music *always* ensures focus."
+
+- **Distractor 3 (The "Not Given" Trap)**:
+    - A statement that sounds plausible (common sense) but is **NOT mentioned** in the text at all.
+    - Do NOT make it obviously false (e.g., "Pollution is good"). Make it sound academic but irrelevant.
+
+### 7. OUTPUT FORMAT:
 Return ONLY valid JSON.
 {
   "exam_set": [
     {
-      "passage": "...",
-      "question": "...",
-      "options": ["...", "...", "...", "..."],
-      "correct": 2
+      "passage": "Full text...",
+      "question": "Question text...",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correct": 0
     },
     ...
   ]
@@ -244,11 +266,10 @@ def generate_exam():
 
         # === 核心逻辑：卡密验证与扣费 ===
         if token:
-            # 修复点 3: 必须显式判断 is None
             if tokens_collection is None:
                 return jsonify({"error": "Server Database Error (Contact Admin)"}), 500
             
-            # 2. 获取当前剩余次数 (如果新卡密则自动创建)
+            # 2. 获取当前剩余次数
             current_quota = get_token_quota(token)
             
             # 3. 如果次数不足
@@ -270,7 +291,7 @@ def generate_exam():
             current_prompt = STAGE4_PROMPT
 
         response = client.chat.completions.create(
-            model="gpt-4o-mini", 
+            model="gpt-4o", 
             messages=[{"role": "user", "content": current_prompt}],
             response_format={ "type": "json_object" },
             temperature=0.7 
