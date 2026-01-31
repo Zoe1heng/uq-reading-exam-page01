@@ -77,60 +77,49 @@ client = OpenAI(api_key=api_key)
 
 # --- 5. 定义 Prompts  ---
 STAGE1_PROMPT = """
-You are a senior content developer for high-stakes English exams (IELTS/PTE).
+You are a content developer for high-stakes English exams (IELTS/PTE).
 Generate a JSON object with **8 distinct reading items**.
 
-### 1. CRITICAL LENGTH & CONTENT CONSTRAINT:
-- **Length**: Each passage MUST be **200-250 words**.
-- **Sentence Count**: **12-15 sentences** per passage.
-- **Detail**: Do NOT just summarize abstract concepts. Describe specific scenarios, sensory details, or historical context.
+### 1. CRITICAL LENGTH OVERRIDE (READ CAREFULLY):
+- **Problem**: Previous outputs were too short (only 120 words).
+- **Requirement**: Each passage MUST be **180-200 words** long.
+- **Strategy**: You must be **VERBOSE**. Do not summarize. Elaborate on every point.
+- **Sentence Count**: **16-20 sentences** per passage. (Use compound-complex sentences).
 
-### 2. CITATION STYLE:
-- **Rule**: Use specific names (Dr. X) in **MAXIMUM 2** passages.
-- **For the other 6**: Use generalized attribution ("Many biologists...", "Recent evidence...", "Urban planners...").
+### 2. MANDATORY STRUCTURE (To ensure length):
+You MUST follow this "5-Step Expansion" formula for EVERY passage to guarantee word count:
+1.  **The Hook & Definition (3-4 sentences)**: Introduce the concept with rich sensory or descriptive details. Define it thoroughly.
+2.  **The Context/History (3-4 sentences)**: Explain how this was viewed in the past (e.g., "In the Victorian era...", "Previously, scientists believed..."). Provide a specific (fictional or real) date/era.
+3.  **The "But" (The Pivot) (3-4 sentences)**: Introduce the complication, new evidence, or modern problem. Use transition phrases like "However," "Conversely," or "Despite this."
+4.  **The Specific Evidence (3-4 sentences)**: Cite a specific study/event. Describe the *methodology* or *specific details* of the event, not just the result. (Remember: Use specific names in max 2 passages; use generalized attribution for the rest).
+5.  **The Implication (3-4 sentences)**: Explain the long-term consequences on society, nature, or the individual.
 
-### 3. STRUCTURAL VARIETY (Mix these 4 Styles):
-- **Style A (Sensory)**: Start with a sound/sight description.
-- **Style B (Historical)**: Start with "In the late 19th century..." or similar.
-- **Style C (Rhetorical)**: Start with a question to the reader.
-- **Style D (Phenomenon)**: Direct definition of a complex event.
+### 3. TOPICS (Mix these):
+- Animal Behavior (e.g., mimicry, migration patterns).
+- Urban Planning (e.g., gentrification, smart cities).
+- Cognitive Psychology (e.g., memory, perception bias).
+- Environmental Science (e.g., soil erosion, microplastics).
+- History of Technology (e.g., the telegraph, steam engine).
 
-### 4. TOPICS (Mix these):
-- Animal Behavior, Urban Planning, Cognitive Psychology, Environmental Science, History of Tech.
-
-### 5. QUESTION TYPES (Standardized):
+### 4. QUESTION TYPES (Standardized):
 Randomly assign ONE question type per passage:
 - "What is the main point that the writer is making in this passage?"
 - "What would make the best heading for this paragraph?"
 - "What is the writer doing in this passage?"
 - "What conclusion can the reader make from this passage?"
 
-### 6. OPTION GENERATION (CRITICAL UPGRADE - HARD MODE):
-You must create **DIFFICULT** options. Do not create easy "giveaway" questions.
+### 5. OPTION GENERATION (HARD MODE):
+- **Correct Answer**: Paraphrase using synonyms.
+- **Distractor 1 (Too Narrow)**: True detail, but not the main point.
+- **Distractor 2 (Too Strong)**: Uses absolute words (always, never, solely).
+- **Distractor 3 (Not Given)**: Plausible academic statement, but not in text.
 
-- **The Correct Answer (The Paraphrase)**:
-    - MUST express the core idea using **SYNONYMS**.
-    - **Forbidden**: Do NOT simply repeat distinct keywords from the text.
-    - Example: If text says "The noise caused severe distress," the option should say "The sounds resulted in significant anxiety."
-
-- **Distractor 1 (The "Too Narrow" Trap)**:
-    - A statement that is **TRUE** according to the text, but is only a **minor detail**, not the main point/heading.
-    - *Goal*: Trap students who spot a keyword but don't understand the whole text.
-
-- **Distractor 2 (The "Too Strong" Trap)**:
-    - A statement that closely resembles the text but uses **absolute language** (e.g., "always", "only", "solely", "never") to make it strictly incorrect.
-    - Example: Text says "Listening to music *can* help concentration," Option says "Listening to music *always* ensures focus."
-
-- **Distractor 3 (The "Not Given" Trap)**:
-    - A statement that sounds plausible (common sense) but is **NOT mentioned** in the text at all.
-    - Do NOT make it obviously false (e.g., "Pollution is good"). Make it sound academic but irrelevant.
-
-### 7. OUTPUT FORMAT:
+### 6. OUTPUT FORMAT:
 Return ONLY valid JSON.
 {
   "exam_set": [
     {
-      "passage": "Full text...",
+      "passage": "Full text (approx 250 words)...",
       "question": "Question text...",
       "options": ["Option A", "Option B", "Option C", "Option D"],
       "correct": 0
